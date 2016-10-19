@@ -2,7 +2,8 @@ var log = require('./log')('Pact verifier');
 var request = require('request');
 var _ = require('lodash');
 
-module.exports = function() {
+module.exports = function(providerUrl) {
+    providerUrl = providerUrl || "http://localhost:3000";
 
     // adds colours to strings
     require('colors');
@@ -109,7 +110,7 @@ module.exports = function() {
                     interaction.request.path + "?" + interaction.request.query;
 
             var options = {
-                url: "http://localhost:3000" + path,
+                url: pathproviderUrl + path,
                 headers: interaction.request.headers ? interaction.request.headers : {},
                 body: interaction.request.body,
                 method: interaction.request.method,
