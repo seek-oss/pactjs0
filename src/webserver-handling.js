@@ -30,7 +30,7 @@ function setup(app, cb){
 }
 
 function teardown (cb) {
-    webserver.close(cb);
+    webserver && webserver.close(cb);
 }
 
 module.exports = {

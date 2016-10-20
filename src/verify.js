@@ -41,22 +41,6 @@ module.exports = function() {
         var failedCount = 0;
         var allErrors = [];
 
-        webserver.setup(pactTest.provider, function(err, url){
-            if(err){
-                console.error('Fatal error: Unable to setup webserver for Pact test');
-                throw err;
-            }
-            else{
-                console.log('Provider running on: ' + url);
-                providerUrl = url;
-                stateManager.verify(contract.interactions, providerStates);
-
-                // fire first interaction
-                nextInteraction = pendingInteractions.shift();
-                verifyInteraction(nextInteraction, interactionDone);
-            }
-        });
-
         // synchronously iterate through all interactions
         var interactionDone = function(errors) {
             completedInteractions.push(nextInteraction);
@@ -90,6 +74,23 @@ module.exports = function() {
                 });
             }
         };
+        
+        webserver.setup(pactTest.provider, function(err, url){
+            if(err){
+                console.error('Fatal error: Unable to setup webserver for Pact test');
+                throw err;
+            }
+            else{
+                console.log('Provider running on: ' + url);
+                providerUrl = url;
+                stateManager.verify(contract.interactions, providerStates);
+
+                // fire first interaction
+                nextInteraction = pendingInteractions.shift();
+                verifyInteraction(nextInteraction, interactionDone);
+            }
+        });
+
     };
 
     var verifyInteraction = function(interaction, done) {
@@ -118,7 +119,8 @@ module.exports = function() {
             request(options, function(err, res, body){
                 if(err){
                     console.error('Error in making request: ', options, err);
-                    done(err);
+                    errors.push(err);
+                    done(errors);
                 }
                 done(verifier.verify(interaction, res));
             });
