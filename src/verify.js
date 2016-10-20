@@ -1,10 +1,9 @@
 var log = require('./log')('Pact verifier');
 var request = require('request');
 var _ = require('lodash');
+var urljoin = require('url-join');
 
-module.exports = function(providerUrl) {
-    providerUrl = providerUrl || "http://localhost:3000";
-
+module.exports = function() {
     // adds colours to strings
     require('colors');
 
@@ -14,7 +13,7 @@ module.exports = function(providerUrl) {
     var webserver = require('./webserver-handling');
     var providerStates, provider, contract;
     var app;
-    var httpServer;
+    var providerUrl;
 
     /**
      * Verify all interactions within a contract
@@ -36,21 +35,25 @@ module.exports = function(providerUrl) {
 
         var pendingInteractions = contract.interactions;
         var completedInteractions = [];
+        var nextInteraction;
 
         var passedCount = 0;
         var failedCount = 0;
         var allErrors = [];
 
-        webserver.setup(pactTest.provider, function(err, server){
+        webserver.setup(pactTest.provider, function(err, url){
             if(err){
-                throw {
-                    message: "Fatal error: Unable to setup webserver for Pact test",
-                    err: err
-                };
+                console.error('Fatal error: Unable to setup webserver for Pact test');
+                throw err;
             }
             else{
-                httpServer = server;
+                console.log('Provider running on: ' + url);
+                providerUrl = url;
                 stateManager.verify(contract.interactions, providerStates);
+
+                // fire first interaction
+                nextInteraction = pendingInteractions.shift();
+                verifyInteraction(nextInteraction, interactionDone);
             }
         });
 
@@ -78,10 +81,8 @@ module.exports = function(providerUrl) {
                 console.log("---------------------------------------------------------------");
                 webserver.teardown(function(err){
                     if(err){
-                        throw {
-                            message: "Unable to teardown webserver",
-                            err: err
-                        };
+                        console.error("Unable to teardown webserver")
+                        throw err;
                     }
                     else {
                         done(allErrors);
@@ -89,9 +90,6 @@ module.exports = function(providerUrl) {
                 });
             }
         };
-
-        var nextInteraction = pendingInteractions.shift();
-        verifyInteraction(nextInteraction, interactionDone);
     };
 
     var verifyInteraction = function(interaction, done) {
@@ -110,7 +108,7 @@ module.exports = function(providerUrl) {
                     interaction.request.path + "?" + interaction.request.query;
 
             var options = {
-                url: pathproviderUrl + path,
+                url: urljoin(providerUrl + path),
                 headers: interaction.request.headers ? interaction.request.headers : {},
                 body: interaction.request.body,
                 method: interaction.request.method,
