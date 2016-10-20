@@ -1,8 +1,9 @@
 var http = require('http');
 var webserver;
-var urlPattern = new RegExp('(http|https)://[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:/~+#-]*[\w@?^=%&amp;/~+#-])?')
+var urlRegex = /https?:\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
 
 function setup(app, cb){
+    console.log("TEST ", typeof app, urlRegex.test(app));
     function cbProxy(err, server) {
         cb(err, 'http://localhost:' + webserver.address().port)
     }
@@ -10,7 +11,7 @@ function setup(app, cb){
         throw new Error('No webserver defined');
     }
     // Caller has started the app externally. Just use the url they gave you.
-    else if (typeof app === 'string' && urlPattern.test(app)) {
+    else if (typeof app === 'string' && urlRegex.test(app)) {
         cb(null, app)
     }
     //Express and similar compatible apps have the 'listen' method defined
