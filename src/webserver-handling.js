@@ -3,7 +3,6 @@ var webserver;
 var urlRegex = /https?:\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
 
 function setup(app, cb){
-    console.log("TEST ", typeof app, urlRegex.test(app));
     function cbProxy(err, server) {
         cb(err, 'http://localhost:' + webserver.address().port)
     }
