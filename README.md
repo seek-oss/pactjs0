@@ -8,7 +8,7 @@ Currently it is a bare-bones implementation that can verify a provider's respons
 Install
 -------
 
-    npm install pactjs --save-dev
+    npm install nodejs-pact-provider --save-dev
 
 Examples
 --------

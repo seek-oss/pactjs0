@@ -1,9 +1,9 @@
 var log = require('./log')('Pact verifier');
 var request = require('request');
 var _ = require('lodash');
+var urljoin = require('url-join');
 
 module.exports = function() {
-
     // adds colours to strings
     require('colors');
 
@@ -13,7 +13,7 @@ module.exports = function() {
     var webserver = require('./webserver-handling');
     var providerStates, provider, contract;
     var app;
-    var httpServer;
+    var providerUrl;
 
     /**
      * Verify all interactions within a contract
@@ -35,23 +35,11 @@ module.exports = function() {
 
         var pendingInteractions = contract.interactions;
         var completedInteractions = [];
+        var nextInteraction;
 
         var passedCount = 0;
         var failedCount = 0;
         var allErrors = [];
-
-        webserver.setup(pactTest.provider, function(err, server){
-            if(err){
-                throw {
-                    message: "Fatal error: Unable to setup webserver for Pact test",
-                    err: err
-                };
-            }
-            else{
-                httpServer = server;
-                stateManager.verify(contract.interactions, providerStates);
-            }
-        });
 
         // synchronously iterate through all interactions
         var interactionDone = function(errors) {
@@ -77,10 +65,8 @@ module.exports = function() {
                 console.log("---------------------------------------------------------------");
                 webserver.teardown(function(err){
                     if(err){
-                        throw {
-                            message: "Unable to teardown webserver",
-                            err: err
-                        };
+                        console.error("Unable to teardown webserver")
+                        throw err;
                     }
                     else {
                         done(allErrors);
@@ -88,9 +74,23 @@ module.exports = function() {
                 });
             }
         };
+        
+        webserver.setup(pactTest.provider, function(err, url){
+            if(err){
+                console.error('Fatal error: Unable to setup webserver for Pact test');
+                throw err;
+            }
+            else{
+                console.log('Provider running on: ' + url);
+                providerUrl = url;
+                stateManager.verify(contract.interactions, providerStates);
 
-        var nextInteraction = pendingInteractions.shift();
-        verifyInteraction(nextInteraction, interactionDone);
+                // fire first interaction
+                nextInteraction = pendingInteractions.shift();
+                verifyInteraction(nextInteraction, interactionDone);
+            }
+        });
+
     };
 
     var verifyInteraction = function(interaction, done) {
@@ -109,7 +109,7 @@ module.exports = function() {
                     interaction.request.path + "?" + interaction.request.query;
 
             var options = {
-                url: "http://localhost:3000" + path,
+                url: urljoin(providerUrl + path),
                 headers: interaction.request.headers ? interaction.request.headers : {},
                 body: interaction.request.body,
                 method: interaction.request.method,
@@ -119,7 +119,8 @@ module.exports = function() {
             request(options, function(err, res, body){
                 if(err){
                     console.error('Error in making request: ', options, err);
-                    done(err);
+                    errors.push(err);
+                    done(errors);
                 }
                 done(verifier.verify(interaction, res));
             });

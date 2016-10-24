@@ -1,6 +1,6 @@
 {
   "name": "nodejs-pact-provider",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Pact for Javascript",
   "dependencies": {
     "colors": "~0.6.2",
@@ -9,7 +9,8 @@
     "deep-diff": "^0.3.2",
     "lodash": "^3.10.1",
     "q": "~1.0.1",
-    "request": "^2.40.0"
+    "request": "^2.40.0",
+    "url-join": "^1.1.0"
   },
   "devDependencies": {
     "chai": "^1.9.1",
